@@ -13,10 +13,10 @@ interface Session {
 const Ctx = createContext<Session>({ user: null, isOwner: false, unlock: () => {}, lock: () => {} });
 export const useSession = () => useContext(Ctx);
 /** Current user id, for stamping stock moves. */
-export const useUserId = () => useContext(Ctx).user?.id ?? 0;
+export const useUserId = () => useContext(Ctx).user?.id ?? '';
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [userId, setUserId] = useState<number | null>(() => readSession());
+  const [userId, setUserId] = useState<string | null>(() => readSession());
   const user = useLiveQuery(async () => (userId ? (await db.users.get(userId)) ?? null : null), [userId]);
 
   const unlock = useCallback((u: User) => {

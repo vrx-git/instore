@@ -12,7 +12,7 @@ import { List, Page, Row, Segmented, Sheet, useToast } from '../components/ui';
 import { Scanner } from '../components/Scanner';
 import { AdjustSheet, type AdjustMode } from '../components/AdjustSheet';
 
-type Tally = { key: number; itemId: number; name: string; unit: string; mode: AdjustMode; qty: number };
+type Tally = { key: number; itemId: string; name: string; unit: string; mode: AdjustMode; qty: number };
 
 export default function Scan() {
   const nav = useNavigate();
@@ -23,7 +23,7 @@ export default function Scan() {
   const [camera, setCamera] = useState(true);
   const [mode, setMode] = useState<AdjustMode>('in');
   const [fast, setFast] = useState(false);
-  const [storeId, setStoreId] = useState<number | undefined>();
+  const [storeId, setStoreId] = useState<string | undefined>();
   const [code, setCode] = useState('');
   const [item, setItem] = useState<Item | null>(null);
   const [unknown, setUnknown] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export default function Scan() {
         </form>
         <div className="flex items-center gap-3">
           {(stores?.length ?? 0) > 1 && (
-            <select className="field flex-1 py-2" value={sid} onChange={(e) => setStoreId(Number(e.target.value))} aria-label="Store">
+            <select className="field flex-1 py-2" value={sid} onChange={(e) => setStoreId(e.target.value)} aria-label="Store">
               {stores?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           )}

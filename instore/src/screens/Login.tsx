@@ -6,6 +6,8 @@ import { lastUserId, setupOwner, verifyPin } from '../services/auth';
 import { useSession } from '../hooks/session';
 import { PinPad } from '../components/PinPad';
 import { Field } from '../components/ui';
+import { RestoreFromEmail } from '../components/SyncUI';
+import { autoRenewIfNeeded, useSync } from '../sync/controller';
 
 function Logo() {
   return (
@@ -17,14 +19,15 @@ function Logo() {
 }
 
 export default function Login() {
-  const users = useLiveQuery(() => db.users.filter((u) => !!u.active).toArray());
+  const users = useLiveQuery(() => db.users.filter((u) => !!u.active && !u.deleted).toArray());
   if (!users) return null;
   return users.length ? <Unlock users={users} /> : <Setup />;
 }
 
 function Setup() {
   const { unlock } = useSession();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(1);
+  const sync = useSync();
   const [f, setF] = useState({ business: '', name: '' });
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
@@ -40,13 +43,20 @@ function Setup() {
   return (
     <div className="flex min-h-full flex-col items-center px-6 pb-safe pt-safe">
       <div className="mt-10"><Logo /></div>
-      {step === 1 && (
+      {sync.email && (sync.status === 'syncing' || sync.status === 'idle') && (
+        <p className="mt-8 text-center text-muted">Downloading your data from {sync.email}…</p>
+      )}
+      {step === 0 && <div className="mt-8 w-full max-w-sm"><RestoreFromEmail onCancel={() => setStep(1)} /></div>}
+      {step === 1 && !sync.email && (
         <form className="mt-8 w-full max-w-sm space-y-4" onSubmit={(e) => { e.preventDefault(); if (f.name.trim()) setStep(2); }}>
           <p className="text-center text-muted">Welcome! Set up INSTORE on this phone.</p>
           <Field label="Shop / business name"><input className="field" value={f.business} onChange={(e) => setF({ ...f, business: e.target.value })} /></Field>
           <Field label="Your name"><input className="field" required value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
           <button className="btn-primary w-full text-[17px]" disabled={!f.name.trim()}>Continue</button>
-          <p className="text-center text-xs text-muted">Your data stays on this phone. You'll be the owner and can add staff later.</p>
+          <p className="text-center text-xs text-muted">You'll be the owner and can add staff later.</p>
+          <div className="border-t border-line pt-4">
+            <button type="button" className="btn-soft w-full" onClick={() => setStep(0)}>Already use INSTORE? Restore from my backup email</button>
+          </div>
         </form>
       )}
       {step === 2 && (
@@ -71,6 +81,13 @@ function Unlock({ users }: { users: User[] }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const business = useLiveQuery(() => getSetting('business_name'));
+  const sync = useSync();
+  const [renewing, setRenewing] = useState(false);
+
+  // Opening the app / coming back after auto-lock: quietly renew Google backup sign-in if needed.
+  useEffect(() => {
+    if (sync.ready && sync.email && !renewing && autoRenewIfNeeded()) setRenewing(true);
+  }, [sync.ready, sync.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     lastUserId().then((id) => setSelected(users.find((u) => u.id === id) ?? (users.length === 1 ? users[0] : null)));
@@ -88,6 +105,7 @@ function Unlock({ users }: { users: User[] }) {
     <div className="flex min-h-full flex-col items-center px-6 pb-safe pt-safe">
       <div className="mt-10"><Logo /></div>
       {business && <div className="mt-1 text-sm text-muted">{business}</div>}
+      {renewing && <div className="mt-2 text-xs text-primary">Connecting to Google backup…</div>}
       {!selected ? (
         <div className="mt-8 w-full max-w-sm">
           <p className="mb-3 text-center font-medium">Who's using INSTORE?</p>

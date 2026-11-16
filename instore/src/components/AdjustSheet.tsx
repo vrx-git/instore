@@ -11,15 +11,15 @@ export type AdjustMode = 'in' | 'out' | 'count' | 'transfer';
 
 /** Sheet for a stock change on one item: in / out / physical count / transfer. */
 export function AdjustSheet({ item, open, onClose, initialMode = 'in', initialStoreId, onDone }: {
-  item: Item | null; open: boolean; onClose: () => void; initialMode?: AdjustMode; initialStoreId?: number;
+  item: Item | null; open: boolean; onClose: () => void; initialMode?: AdjustMode; initialStoreId?: string;
   onDone?: (summary: { mode: AdjustMode; qty: number; itemName: string }) => void;
 }) {
   const stores = useStores();
   const userId = useUserId();
   const toast = useToast();
   const [mode, setMode] = useState<AdjustMode>(initialMode);
-  const [storeId, setStoreId] = useState<number | undefined>(initialStoreId);
-  const [toStoreId, setToStoreId] = useState<number | undefined>();
+  const [storeId, setStoreId] = useState<string | undefined>(initialStoreId);
+  const [toStoreId, setToStoreId] = useState<string | undefined>();
   const [qty, setQty] = useState(1);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -66,13 +66,13 @@ export function AdjustSheet({ item, open, onClose, initialMode = 'in', initialSt
         {(stores?.length ?? 0) > 1 && (
           <div className="grid grid-cols-2 gap-3">
             <Field label={mode === 'transfer' ? 'From' : 'Store'} className={mode === 'transfer' ? '' : 'col-span-2'}>
-              <select className="field" value={sid} onChange={(e) => setStoreId(Number(e.target.value))}>
+              <select className="field" value={sid} onChange={(e) => setStoreId(e.target.value)}>
                 {stores?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </Field>
             {mode === 'transfer' && (
               <Field label="To">
-                <select className="field" value={tid} onChange={(e) => setToStoreId(Number(e.target.value))}>
+                <select className="field" value={tid} onChange={(e) => setToStoreId(e.target.value)}>
                   {stores?.filter((s) => s.id !== sid).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </Field>

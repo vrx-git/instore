@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ScanLine } from 'lucide-react';
-import { db } from '../data/db';
+import { addRecord, db } from '../data/db';
 import { useCategories, useStores } from '../hooks/data';
 import { useUserId } from '../hooks/session';
 import { blankItem, createItem, updateItem, type ItemInput } from '../services/items';
@@ -20,13 +20,13 @@ export default function ItemForm() {
   const editing = !!id;
   const [f, setF] = useState<ItemInput>(() => ({ ...blankItem(), barcode: params.get('barcode') ?? '' }));
   const [openQty, setOpenQty] = useState(0);
-  const [openStore, setOpenStore] = useState<number | undefined>();
+  const [openStore, setOpenStore] = useState<string | undefined>();
   const [scan, setScan] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    db.items.get(Number(id)).then((i) => { if (i) { const { id: _i, createdAt: _c, ...rest } = i; setF(rest); } });
+    db.items.get(id).then((i) => { if (i) { const { id: _i, createdAt: _c, updatedAt: _u, deleted: _d, dirty: _y, ...rest } = i; setF(rest); } });
   }, [id]);
 
   const set = <K extends keyof ItemInput>(k: K, v: ItemInput[K]) => setF((x) => ({ ...x, [k]: v }));
@@ -35,14 +35,14 @@ export default function ItemForm() {
   const newCategory = async () => {
     const name = window.prompt('New category name')?.trim();
     if (!name) return;
-    const existing = await db.categories.where('name').equals(name).first();
-    set('categoryId', existing?.id ?? (await db.categories.add({ name })));
+    const existing = (await db.categories.where('name').equals(name).toArray()).find((c) => !c.deleted);
+    set('categoryId', existing?.id ?? (await addRecord(db.categories, { name })));
   };
 
   const save = async () => {
     setBusy(true);
     try {
-      if (editing) { await updateItem(Number(id), f); toast('Item saved'); nav(-1); }
+      if (editing) { await updateItem(id!, f); toast('Item saved'); nav(-1); }
       else {
         const sid = openStore ?? stores?.[0]?.id;
         const newId = await createItem(f, sid && openQty > 0 ? { storeId: sid, qty: openQty, userId } : undefined);
@@ -70,7 +70,7 @@ export default function ItemForm() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Category">
-            <select className="field" value={f.categoryId ?? ''} onChange={(e) => (e.target.value === 'new' ? newCategory() : set('categoryId', e.target.value ? Number(e.target.value) : null))}>
+            <select className="field" value={f.categoryId ?? ''} onChange={(e) => (e.target.value === 'new' ? newCategory() : set('categoryId', e.target.value || null))}>
               <option value="">None</option>
               {cats?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               <option value="new">+ New category…</option>
@@ -98,7 +98,7 @@ export default function ItemForm() {
             <div className="font-semibold">Opening stock</div>
             <QtyInput value={openQty} onChange={setOpenQty} label="Opening stock" />
             {(stores?.length ?? 0) > 1 && (
-              <select className="field" value={openStore ?? stores?.[0]?.id} onChange={(e) => setOpenStore(Number(e.target.value))} aria-label="Opening stock store">
+              <select className="field" value={openStore ?? stores?.[0]?.id} onChange={(e) => setOpenStore(e.target.value)} aria-label="Opening stock store">
                 {stores?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             )}

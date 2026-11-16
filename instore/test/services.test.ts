@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { InstoreDb, useDatabase, db } from '../src/data/db';
+import { addRecord, InstoreDb, useDatabase, db } from '../src/data/db';
 import { createItem, findByCode, ItemError, updateItem } from '../src/services/items';
 import { history, issue, quickAdjust, receive, setCount, stockByStore, stockOf, stockTotals, transfer, deleteMove, StockError } from '../src/services/stock';
 import { AuthError, changePin, createUser, setupOwner, setUserActive, verifyPin } from '../src/services/auth';
@@ -8,15 +8,16 @@ import { exportData, importData } from '../src/services/backup';
 import { seedDemo } from '../src/services/seed';
 
 let n = 0;
-let owner: number, staff: number, main: number, godown: number, item: number;
+let owner: string, staff: string, main: string, godown: string, item: string;
+const ITEM = { name: 'Bulb', sku: 'B1', barcode: '111', categoryId: null, unit: 'PCS', hsn: '', gstRate: 12, purchasePrice: 10, salePrice: 15, lowStockQty: 5, location: 'A1' };
 
 beforeEach(async () => {
-  useDatabase(new InstoreDb(`test-${++n}`));
+  useDatabase(new InstoreDb(`svc-${++n}`));
   owner = await setupOwner('Owner', '1234', 'Test Shop');
   staff = await createUser('Ravi', '5678', 'staff');
-  main = (await db.stores.toCollection().first())!.id!;
-  godown = await db.stores.add({ name: 'Godown', kind: 'godown', active: 1 });
-  item = await createItem({ name: 'Bulb', sku: 'B1', barcode: '111', categoryId: null, unit: 'PCS', hsn: '', gstRate: 12, purchasePrice: 10, salePrice: 15, lowStockQty: 5, location: 'A1' }, { storeId: main, qty: 10, userId: owner });
+  main = (await db.stores.toCollection().first())!.id;
+  godown = await addRecord(db.stores, { name: 'Godown', kind: 'godown', active: 1 });
+  item = await createItem(ITEM, { storeId: main, qty: 10, userId: owner });
 });
 
 describe('stock ledger', () => {
@@ -35,8 +36,10 @@ describe('stock ledger', () => {
     expect((await stockTotals(godown)).get(item)).toBe(4);
   });
 
-  it('records user, balance after and newest-first history', async () => {
+  it('records user, computes balance after and lists newest first', async () => {
+    await new Promise((r) => setTimeout(r, 2));
     await quickAdjust(item, main, 1, staff);
+    await new Promise((r) => setTimeout(r, 2));
     await quickAdjust(item, main, -1, owner);
     const h = await history(item);
     expect(h.map((m) => m.type)).toEqual(['out', 'in', 'opening']);
@@ -50,11 +53,19 @@ describe('stock ledger', () => {
     await expect(setCount(item, main, -1, owner)).rejects.toBeInstanceOf(StockError);
   });
 
-  it('deleting one half of a transfer removes both', async () => {
+  it('deleting one half of a transfer removes both (soft delete)', async () => {
     const [out] = await transfer(item, main, godown, 2, owner);
-    await deleteMove(out.id!);
+    await deleteMove(out.id);
     expect(await stockOf(item, main)).toBe(10);
     expect(await stockOf(item, godown)).toBe(0);
+    expect((await db.moves.get(out.id))?.deleted).toBe(1);
+  });
+
+  it('marks local changes dirty with a fresh updatedAt', async () => {
+    const m = await receive(item, main, 1, owner);
+    const stored = await db.moves.get(m.id);
+    expect(stored?.dirty).toBe(1);
+    expect(stored?.updatedAt).toBeGreaterThan(0);
   });
 });
 
@@ -62,8 +73,8 @@ describe('items', () => {
   it('finds by barcode or SKU and blocks duplicates', async () => {
     expect((await findByCode('111'))?.id).toBe(item);
     expect((await findByCode('b1'))?.id).toBe(item);
-    await expect(createItem({ name: 'X', sku: 'B1', barcode: '', categoryId: null, unit: '', hsn: '', gstRate: 0, purchasePrice: 0, salePrice: 0, lowStockQty: 0, location: '' })).rejects.toBeInstanceOf(ItemError);
-    await updateItem(item, { name: 'Bulb 9W', sku: 'B1', barcode: '111', categoryId: null, unit: 'PCS', hsn: '', gstRate: 12, purchasePrice: 10, salePrice: 15, lowStockQty: 5, location: 'A1' });
+    await expect(createItem({ ...ITEM, name: 'X', barcode: '' })).rejects.toBeInstanceOf(ItemError);
+    await updateItem(item, { ...ITEM, name: 'Bulb 9W' });
     expect((await db.items.get(item))?.name).toBe('Bulb 9W');
   });
 });
@@ -80,11 +91,11 @@ describe('auth', () => {
   });
 });
 
-describe('backup', () => {
+describe('backup file', () => {
   it('round-trips all data', async () => {
     await receive(item, main, 3, staff);
     const file = await exportData();
-    useDatabase(new InstoreDb(`test-${++n}`));
+    useDatabase(new InstoreDb(`svc-${++n}`));
     expect(await db.items.count()).toBe(0);
     await importData(JSON.parse(JSON.stringify(file)));
     expect(await stockOf(item, main)).toBe(13);
@@ -95,7 +106,7 @@ describe('backup', () => {
 
 describe('demo data', () => {
   it('seeds only when empty', async () => {
-    useDatabase(new InstoreDb(`test-${++n}`));
+    useDatabase(new InstoreDb(`svc-${++n}`));
     const o = await setupOwner('O', '1111', '');
     expect(await seedDemo(o)).toBe(true);
     expect(await db.items.count()).toBe(6);

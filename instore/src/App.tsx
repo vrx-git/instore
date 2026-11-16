@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useSession } from './hooks/session';
 import { requestPersistence } from './data/db';
 import { TabBar } from './components/TabBar';
+import { ReconnectBanner } from './components/SyncUI';
 import Login from './screens/Login';
 import Dashboard from './screens/Dashboard';
 import Items from './screens/Items';
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <ReconnectBanner />
       <TabBar />
     </>
   );

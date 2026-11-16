@@ -6,13 +6,24 @@ import './index.css';
 import App from './App';
 import { SessionProvider } from './hooks/session';
 import { ToastProvider } from './components/ui';
+import { SyncNotices } from './components/SyncUI';
+import { migrateFromV1 } from './data/db';
+import { captureRedirect, initSync } from './sync/controller';
 
 registerSW({ immediate: true });
+captureRedirect();
 
-createRoot(document.getElementById('root')!).render(
+// Move data from INSTORE 1.0 (if any) before showing the app, then start Google sync.
+migrateFromV1().catch((e) => console.error('Migration failed', e)).finally(() => {
+  initSync();
+  render();
+});
+
+const render = () => createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <ToastProvider>
+        <SyncNotices />
         <SessionProvider>
           <App />
         </SessionProvider>

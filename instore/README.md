@@ -42,6 +42,43 @@ The camera and offline install need HTTPS. The included workflow `.github/workfl
 
 Without GitHub, you can build it yourself (`npm run build:instore`) and drag the `instore/dist` folder onto Netlify Drop (app.netlify.com/drop).
 
+## Backup email (Google Sheets sync)
+
+**Settings → Backup email**: type a Gmail address and tap **Save & start backup**. Google asks you to confirm that account once. INSTORE then creates a sheet called **INSTORE Data** in that account's Drive and keeps it in sync automatically:
+- after each change,
+- when the app opens,
+- when the phone comes back online,
+- every 2 minutes while the app is open.
+
+**On another phone or computer:** open INSTORE and choose **Already use INSTORE? Restore from my backup email**. Enter the same email and everything downloads, including your users and PINs. After that, both devices stay in sync.
+
+The sheet has three tabs:
+
+| Tab | What it is |
+| --- | --- |
+| `log` | The sync data. Don't edit it. |
+| `Items` | Readable report: every item with its current stock. Rewritten after each sync. |
+| `Activity` | Readable report: recent stock movements. Rewritten after each sync. |
+
+Google sign-in in a browser app lasts about an hour. INSTORE renews it **automatically at login**: whenever the PIN screen shows (opening the app, or returning after auto-lock), it quietly reconnects to Google with no screens to tap, then syncs.
+- **If the hour runs out while you're using the app:** your changes keep saving on the phone and upload at the next login. You can also tap the yellow bar to reconnect straight away.
+- **If Google needs your password again** (rare): the yellow bar stays until you tap it.
+
+iPhone web apps can't run in the background, so sync happens while INSTORE is open.
+
+INSTORE can only see the sheet it created, not the rest of your Drive. Keep the sheet private: it contains all your stock data and PIN hashes.
+
+### Google backup setup (one time, for the app owner)
+1. Go to console.cloud.google.com and create a project called **INSTORE**.
+2. Enable the **Google Sheets API** and the **Google Drive API**.
+3. **OAuth consent screen**:
+   - Choose External, app name INSTORE, and your email.
+   - Under **Audience**, click **Publish app**.
+4. **Credentials → Create credentials → OAuth client ID → Web application**:
+   - Authorized JavaScript origins: `https://vrx-git.github.io` and `http://localhost:5174`
+   - Authorized redirect URIs: `https://vrx-git.github.io/instore/` and `http://localhost:5174/`
+5. Put the Client ID in `src/sync/config.ts` (or set `VITE_GOOGLE_CLIENT_ID` when building), then push.
+
 ## Keep your data safe
 - Use the Home Screen icon. iOS doesn't auto-clear storage for Home Screen apps, but it can for websites opened only in Safari.
 - **Settings → Back up now** saves a `.json` file to Files or iCloud Drive. **Restore from backup** brings it back on any phone.

@@ -1,13 +1,22 @@
 /**
  * Data model for INSTORE. Mirrors the Stock Register server schema
  * (server/src/db/schema.sql) for items/stores/categories, and keeps the same
- * stock-ledger rule: current stock = sum of moves. Each move also records the
- * user who made it, which powers the activity log.
+ * stock-ledger rule: current stock = sum of moves.
+ *
+ * Every synced record has a random string id (so records made on different
+ * phones never clash), `updatedAt` (newest version wins when merging),
+ * `deleted` (soft delete, so deletions sync) and `dirty` (not yet uploaded).
  */
+export interface Synced {
+  id: string;
+  updatedAt: number;
+  deleted: 0 | 1;
+  dirty: 0 | 1;
+}
+
 export type Role = 'owner' | 'staff';
 
-export interface User {
-  id?: number;
+export interface User extends Synced {
   name: string;
   role: Role;
   pinHash: string;
@@ -16,24 +25,21 @@ export interface User {
   createdAt: number;
 }
 
-export interface Store {
-  id?: number;
+export interface Store extends Synced {
   name: string;
   kind: 'store' | 'godown';
   active: 0 | 1;
 }
 
-export interface Category {
-  id?: number;
+export interface Category extends Synced {
   name: string;
 }
 
-export interface Item {
-  id?: number;
+export interface Item extends Synced {
   name: string;
   sku: string;
   barcode: string;
-  categoryId: number | null;
+  categoryId: string | null;
   unit: string;
   hsn: string;
   gstRate: number;
@@ -47,25 +53,34 @@ export interface Item {
 
 export type MoveType = 'opening' | 'in' | 'out' | 'transfer_in' | 'transfer_out' | 'adjust';
 
-export interface Move {
-  id?: number;
-  itemId: number;
-  storeId: number;
+export interface Move extends Synced {
+  itemId: string;
+  storeId: string;
   qty: number; // +ve adds stock, -ve removes
   type: MoveType;
-  userId: number;
+  userId: string;
   at: number; // epoch ms
   note: string;
-  /** links the two halves of a transfer, and items in one quick-entry batch */
+  /** links the two halves of a transfer */
   ref: string;
-  /** stock of this item in this store right after the move (for the audit trail) */
-  balanceAfter: number;
 }
 
-export interface Setting {
+/** Shared settings (synced), e.g. business_name. */
+export interface Setting extends Synced {
+  value: string;
+}
+
+/** Per-device values (never synced): session, sync bookmark, backup email... */
+export interface LocalValue {
   key: string;
   value: string;
 }
+
+export const SYNCED_TABLES = ['users', 'stores', 'categories', 'items', 'moves', 'settings'] as const;
+export type SyncedTable = (typeof SYNCED_TABLES)[number];
+
+/** Fields the app fills in; callers create records without them. */
+export type New<T extends Synced> = Omit<T, keyof Synced> & Partial<Pick<Synced, 'id'>>;
 
 export const MOVE_LABEL: Record<MoveType, string> = {
   opening: 'Opening stock',
@@ -82,3 +97,5 @@ export function stockStatus(qty: number, lowStockQty: number): StockStatus {
   if (lowStockQty > 0 && qty <= lowStockQty) return 'low';
   return 'ok';
 }
+
+export const newId = () => crypto.randomUUID();

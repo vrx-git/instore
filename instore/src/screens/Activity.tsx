@@ -31,7 +31,7 @@ export default function Activity() {
   const nav = useNavigate();
   const users = useUsers();
   const stores = useStores(true);
-  const [filters, setFilters] = useState<{ userId: number; type: string; storeId: number; from: string; to: string }>({ userId: 0, type: '', storeId: 0, from: '', to: '' });
+  const [filters, setFilters] = useState<{ userId: string; type: string; storeId: string; from: string; to: string }>({ userId: '', type: '', storeId: '', from: '', to: '' });
   const [open, setOpen] = useState(false);
   const rows = useActivity({ userId: filters.userId || null, type: filters.type, storeId: filters.storeId || null, from: filters.from, to: filters.to });
   const active = Object.values(filters).filter(Boolean).length;
@@ -63,13 +63,13 @@ export default function Activity() {
             ))}
           </List>
         </section>
-      )) : <Empty title={active ? 'Nothing matches these filters' : 'No activity yet'}>{active ? <button className="font-medium text-primary" onClick={() => setFilters({ userId: 0, type: '', storeId: 0, from: '', to: '' })}>Clear filters</button> : 'Every stock change will appear here with who made it and when.'}</Empty>}
+      )) : <Empty title={active ? 'Nothing matches these filters' : 'No activity yet'}>{active ? <button className="font-medium text-primary" onClick={() => setFilters({ userId: '', type: '', storeId: '', from: '', to: '' })}>Clear filters</button> : 'Every stock change will appear here with who made it and when.'}</Empty>}
 
       <Sheet open={open} onClose={() => setOpen(false)} title="Filter activity">
         <div className="space-y-4">
           <Field label="User">
-            <select className="field" value={filters.userId} onChange={(e) => setFilters({ ...filters, userId: Number(e.target.value) })}>
-              <option value={0}>Everyone</option>{users?.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            <select className="field" value={filters.userId} onChange={(e) => setFilters({ ...filters, userId: e.target.value })}>
+              <option value="">Everyone</option>{users?.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
             </select>
           </Field>
           <Field label="Type">
@@ -80,8 +80,8 @@ export default function Activity() {
           </Field>
           {multi && (
             <Field label="Store">
-              <select className="field" value={filters.storeId} onChange={(e) => setFilters({ ...filters, storeId: Number(e.target.value) })}>
-                <option value={0}>All stores</option>{stores?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              <select className="field" value={filters.storeId} onChange={(e) => setFilters({ ...filters, storeId: e.target.value })}>
+                <option value="">All stores</option>{stores?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </Field>
           )}
@@ -90,7 +90,7 @@ export default function Activity() {
             <Field label="To"><input type="date" className="field" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} /></Field>
           </div>
           <div className="flex gap-2">
-            <button className="btn-outline flex-1" onClick={() => setFilters({ userId: 0, type: '', storeId: 0, from: '', to: '' })}>Clear</button>
+            <button className="btn-outline flex-1" onClick={() => setFilters({ userId: '', type: '', storeId: '', from: '', to: '' })}>Clear</button>
             <button className="btn-primary flex-1" onClick={() => setOpen(false)}>Show results</button>
           </div>
         </div>

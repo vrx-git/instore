@@ -14,12 +14,12 @@ export default function ItemDetail() {
   const { id } = useParams();
   const nav = useNavigate();
   const toast = useToast();
-  const data = useItem(Number(id));
+  const data = useItem(id ?? '');
   const users = useUsers();
   const stores = useStores();
   const userId = useUserId();
   const { isOwner } = useSession();
-  const [storeId, setStoreId] = useState<number | undefined>();
+  const [storeId, setStoreId] = useState<string | undefined>();
   const [sheet, setSheet] = useState<AdjustMode | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -28,8 +28,8 @@ export default function ItemDetail() {
   const { item, stock, status, perStore, moves, categoryName } = data;
   const sid = storeId ?? stores?.[0]?.id;
   const multi = (stores?.length ?? 0) > 1;
-  const userName = (uid: number) => users?.find((u) => u.id === uid)?.name ?? 'Unknown';
-  const storeName = (s: number) => perStore.find((p) => p.id === s)?.name ?? '';
+  const userName = (uid: string) => users?.find((u) => u.id === uid)?.name ?? 'Unknown';
+  const storeName = (s: string) => perStore.find((p) => p.id === s)?.name ?? '';
 
   const quick = async (delta: number) => {
     if (!sid) return;
@@ -57,7 +57,7 @@ export default function ItemDetail() {
       </div>
 
       {multi && (
-        <select className="field mt-4" value={sid} onChange={(e) => setStoreId(Number(e.target.value))} aria-label="Store for quick actions">
+        <select className="field mt-4" value={sid} onChange={(e) => setStoreId(e.target.value)} aria-label="Store for quick actions">
           {stores?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       )}

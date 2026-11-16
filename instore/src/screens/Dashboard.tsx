@@ -7,6 +7,7 @@ import { useSession } from '../hooks/session';
 import { money, qty, timeAgo } from '../lib/format';
 import { Empty, List, Page, Row, StatCard, StockBadge } from '../components/ui';
 import { MoveLine } from './Activity';
+import { SyncIcon } from '../components/SyncUI';
 
 export default function Dashboard() {
   const d = useDashboard();
@@ -17,7 +18,7 @@ export default function Dashboard() {
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <Page title={business || 'INSTORE'} action={<button className="tap flex w-11 items-center justify-center text-primary" onClick={lock} aria-label="Lock"><Lock size={20} /></button>}>
+    <Page title={business || 'INSTORE'} action={<><SyncIcon /><button className="tap flex w-11 items-center justify-center text-primary" onClick={lock} aria-label="Lock"><Lock size={20} /></button></>}>
       <p className="-mt-1 mb-3 text-sm text-muted">{greet}, {user?.name.split(' ')[0]}</p>
       {!d ? null : (
         <>

@@ -1,26 +1,30 @@
-import { db, setSetting } from '../data/db';
-
-const TABLES = ['users', 'stores', 'categories', 'items', 'moves', 'settings'] as const;
+import { db, setLocal } from '../data/db';
+import { SYNCED_TABLES } from '../data/models';
 
 export interface BackupFile {
   app: 'INSTORE';
-  version: 1;
+  version: 2;
   exportedAt: string;
-  data: Record<(typeof TABLES)[number], any[]>;
+  data: Record<(typeof SYNCED_TABLES)[number], any[]>;
 }
 
 export async function exportData(): Promise<BackupFile> {
   const data = {} as BackupFile['data'];
-  for (const t of TABLES) data[t] = await db.table(t).toArray();
-  return { app: 'INSTORE', version: 1, exportedAt: new Date().toISOString(), data };
+  for (const t of SYNCED_TABLES) data[t] = (await db.table(t).toArray()).map(({ dirty: _d, ...r }) => r);
+  return { app: 'INSTORE', version: 2, exportedAt: new Date().toISOString(), data };
 }
 
+/**
+ * Replace all data with a backup file. Restored records count as new local
+ * changes, so if Google backup is on they are uploaded and win over older data.
+ */
 export async function importData(file: BackupFile) {
   if (file?.app !== 'INSTORE' || !file.data) throw new Error('This is not an INSTORE backup file');
-  await db.transaction('rw', TABLES.map((t) => db.table(t)), async () => {
-    for (const t of TABLES) {
+  if (file.version !== 2) throw new Error('This backup is from an older INSTORE version. Please make a new backup from that phone.');
+  await db.transaction('rw', SYNCED_TABLES.map((t) => db.table(t)), async () => {
+    for (const t of SYNCED_TABLES) {
       await db.table(t).clear();
-      if (file.data[t]?.length) await db.table(t).bulkAdd(file.data[t]);
+      if (file.data[t]?.length) await db.table(t).bulkAdd(file.data[t].map(({ updatedAt: _u, dirty: _d, ...r }) => r));
     }
   });
 }
@@ -41,6 +45,6 @@ export async function downloadBackup() {
     a.click();
     URL.revokeObjectURL(a.href);
   }
-  await setSetting('last_backup', new Date().toISOString());
+  await setLocal('last_backup', new Date().toISOString());
   return true;
 }

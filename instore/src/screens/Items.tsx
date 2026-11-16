@@ -12,8 +12,8 @@ export default function Items() {
   const [params, setParams] = useSearchParams();
   const status = (params.get('status') as 'all' | 'low' | 'out') || 'all';
   const [search, setSearch] = useState('');
-  const [categoryId, setCategoryId] = useState<number | 0>(0);
-  const [storeId, setStoreId] = useState<number | 0>(0);
+  const [categoryId, setCategoryId] = useState('');
+  const [storeId, setStoreId] = useState('');
   const cats = useCategories();
   const stores = useStores();
   const items = useItems({ search, status, categoryId: categoryId || null, storeId: storeId || null });
@@ -28,10 +28,10 @@ export default function Items() {
           options={[{ id: 'all', label: 'All' }, { id: 'low', label: 'Low stock' }, { id: 'out', label: 'Out of stock' },
             ...(cats ?? []).map((c) => ({ id: `c${c.id}`, label: c.name }))]}
           value={categoryId ? `c${categoryId}` : status}
-          onChange={(v) => { if (v.startsWith('c')) { setCategoryId(categoryId === Number(v.slice(1)) ? 0 : Number(v.slice(1))); } else { setCategoryId(0); setStatus(v); } }} />
+          onChange={(v) => { if (v.startsWith('c')) { setCategoryId(categoryId === v.slice(1) ? '' : v.slice(1)); } else { setCategoryId(''); setStatus(v); } }} />
         {(stores?.length ?? 0) > 1 && (
-          <select className="field mb-1 py-2" value={storeId} onChange={(e) => setStoreId(Number(e.target.value))} aria-label="Store">
-            <option value={0}>All stores</option>
+          <select className="field mb-1 py-2" value={storeId} onChange={(e) => setStoreId(e.target.value)} aria-label="Store">
+            <option value="">All stores</option>
             {stores?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         )}
