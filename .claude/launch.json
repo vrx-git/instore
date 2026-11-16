@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "stock-register-demo",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["tsx", "server/src/index.ts"],
+      "env": { "DB_FILE": "data/demo.db", "PORT": "4100" },
+      "port": 4100
+    }
+  ]
+}
