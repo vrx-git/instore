@@ -4,9 +4,45 @@
     {
       "name": "stock-register-demo",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["tsx", "server/src/index.ts"],
-      "env": { "DB_FILE": "data/demo.db", "PORT": "4100" },
+      "runtimeArgs": [
+        "tsx",
+        "server/src/index.ts"
+      ],
+      "env": {
+        "DB_FILE": "data/demo.db",
+        "PORT": "4100"
+      },
       "port": 4100
+    },
+    {
+      "name": "instore",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "instore",
+        "--",
+        "--port",
+        "5174",
+        "--strictPort"
+      ],
+      "port": 5174
+    },
+    {
+      "name": "instore-build",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "-w",
+        "instore",
+        "--",
+        "--port",
+        "5175",
+        "--strictPort"
+      ],
+      "port": 5175
     }
   ]
 }

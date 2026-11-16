@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #F6FBF6;
+  --color-mint: #E8F5E9;
+  --color-line: #C8E6C9;
+  --color-primary: #388E3C;
+  --color-primary-light: #4CAF50;
+  --color-ink: #263238;
+  --color-muted: #607D8B;
+  --color-low: #F9A825;
+  --color-out: #D32F2F;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+}
+
+html, body, #root { height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  @apply bg-bg text-ink antialiased;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+input, select, textarea, button { font: inherit; }
+/* iOS zooms into inputs smaller than 16px */
+input, select, textarea { font-size: 16px; }
+
+@utility tap {
+  @apply min-h-11 select-none transition-colors active:opacity-70;
+}
+
+@utility btn {
+  @apply tap inline-flex items-center justify-center gap-2 rounded-xl px-4 font-semibold disabled:opacity-40;
+}
+
+@layer components {
+  .field {
+    @apply w-full rounded-xl border border-line bg-white px-3 py-2.5 text-ink outline-none
+           placeholder:text-muted/70 focus:border-primary;
+  }
+  .label { @apply mb-1 block text-[13px] font-medium text-muted; }
+  .btn-primary { @apply btn bg-primary text-white; }
+  .btn-soft { @apply btn bg-mint text-primary; }
+  .btn-outline { @apply btn border border-line bg-white text-ink; }
+  .btn-danger { @apply btn bg-white text-out border border-out/30; }
+  .card { @apply rounded-2xl border border-line bg-white; }
+  .section-title { @apply px-1 pb-2 pt-5 text-[13px] font-semibold uppercase tracking-wide text-muted; }
+}
+
+.pt-safe { padding-top: max(env(safe-area-inset-top), 0.75rem); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }

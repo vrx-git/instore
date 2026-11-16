@@ -90,6 +90,10 @@ client/   React + Vite + Tailwind app
 data/     your database and backups (not in git)
 ```
 
+## INSTORE (iPhone app)
+
+`instore/` holds **INSTORE**, a phone version of the inventory side (items, stock in/out, scanning, activity log with PIN users). It's an installable web app for iPhone that stores data on the phone. See [instore/README.md](instore/README.md) for setup and how to put it on your iPhone.
+
 ## Not included
 
 Android app, cloud sync, e-way bill / e-invoice (IRN) generation, sending WhatsApp/SMS automatically.
