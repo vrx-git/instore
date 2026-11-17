@@ -12,6 +12,13 @@ import ItemForm from './screens/ItemForm';
 import Scan from './screens/Scan';
 import Activity from './screens/Activity';
 import Settings from './screens/Settings';
+import Bills from './screens/Bills';
+import BillEditor from './screens/BillEditor';
+import BillView from './screens/BillView';
+import More from './screens/More';
+import BusinessDetails from './screens/BusinessDetails';
+import { PartiesScreen, PartyDetail } from './screens/Parties';
+import { ExpensesScreen, PaymentsScreen, ReportsScreen } from './screens/Money';
 
 export default function App() {
   const { user, isOwner } = useSession();
@@ -31,6 +38,17 @@ export default function App() {
         <Route path="/scan" element={<Scan />} />
         <Route path="/activity" element={<Activity />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/settings/business" element={isOwner ? <BusinessDetails /> : <Navigate to="/settings" replace />} />
+        <Route path="/bills" element={<Bills />} />
+        <Route path="/bills/new/:type" element={<BillEditor />} />
+        <Route path="/bills/:id" element={<BillView />} />
+        <Route path="/bills/:id/edit" element={<BillEditor />} />
+        <Route path="/more" element={<More />} />
+        <Route path="/parties" element={<PartiesScreen />} />
+        <Route path="/parties/:id" element={<PartyDetail />} />
+        <Route path="/payments" element={<PaymentsScreen />} />
+        <Route path="/expenses" element={isOwner ? <ExpensesScreen /> : <Navigate to="/more" replace />} />
+        <Route path="/reports" element={isOwner ? <ReportsScreen /> : <Navigate to="/more" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <ReconnectBanner />

@@ -50,3 +50,8 @@ input, select, textarea { font-size: 16px; }
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+/* Fit A4/A5 bill previews on a phone screen (printing is unaffected). */
+@media screen and (max-width: 640px) {
+  .bill-fit { zoom: 0.54; }
+}

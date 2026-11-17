@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Lock, ChevronRight } from 'lucide-react';
+import { Lock, ChevronRight, Receipt, ShoppingCart } from 'lucide-react';
+import { useMoneySummary } from '../hooks/billing';
 import { getSetting } from '../data/db';
 import { useDashboard } from '../hooks/data';
 import { useSession } from '../hooks/session';
@@ -11,6 +12,7 @@ import { SyncIcon } from '../components/SyncUI';
 
 export default function Dashboard() {
   const d = useDashboard();
+  const m = useMoneySummary();
   const nav = useNavigate();
   const { user, lock } = useSession();
   const business = useLiveQuery(() => getSetting('business_name'));
@@ -20,6 +22,17 @@ export default function Dashboard() {
   return (
     <Page title={business || 'INSTORE'} action={<><SyncIcon /><button className="tap flex w-11 items-center justify-center text-primary" onClick={lock} aria-label="Lock"><Lock size={20} /></button></>}>
       <p className="-mt-1 mb-3 text-sm text-muted">{greet}, {user?.name.split(' ')[0]}</p>
+      <div className="mb-3 grid grid-cols-2 gap-3">
+        <button className="btn-primary h-12" onClick={() => nav('/bills/new/sales_invoice')}><Receipt size={18} /> New invoice</button>
+        <button className="btn-soft h-12" onClick={() => nav('/bills/new/purchase_invoice')}><ShoppingCart size={18} /> New purchase</button>
+      </div>
+      {m && (
+        <div className="mb-3 grid grid-cols-3 gap-2">
+          <StatCard label="Today's sales" value={money(m.todaySales)} sub={`${m.todayBills} bills`} tone="green" onClick={() => nav('/bills')} />
+          <StatCard label="To receive" value={money(m.receivable)} onClick={() => nav('/parties')} />
+          <StatCard label="To pay" value={money(m.payable)} tone={m.payable ? 'out' : 'default'} onClick={() => nav('/parties')} />
+        </div>
+      )}
       {!d ? null : (
         <>
           <div className="grid grid-cols-2 gap-3">

@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ClipboardCheck, PackagePlus, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ClipboardCheck, PackagePlus, SlidersHorizontal, Receipt, ShoppingCart, Undo2, Truck } from 'lucide-react';
 import { MOVE_LABEL, type MoveType } from '../data/models';
 import { useActivity, useStores, useUsers, type ActivityRow } from '../hooks/data';
 import { clock, dayLabel, qty, signed } from '../lib/format';
 import { Empty, Field, List, Page, Row, Sheet } from '../components/ui';
 
-const ICON: Record<MoveType, any> = { in: ArrowDownLeft, out: ArrowUpRight, transfer_in: ArrowLeftRight, transfer_out: ArrowLeftRight, adjust: ClipboardCheck, opening: PackagePlus };
+const ICON: Record<MoveType, any> = {
+  in: ArrowDownLeft, out: ArrowUpRight, transfer_in: ArrowLeftRight, transfer_out: ArrowLeftRight, adjust: ClipboardCheck, opening: PackagePlus,
+  sale: Receipt, purchase: ShoppingCart, sale_return: Undo2, purchase_return: Undo2, challan: Truck,
+};
 
 /** One movement line: icon, item, action and ±qty. Shared with the dashboard. */
 export function MoveLine({ m, sub }: { m: ActivityRow; sub: string }) {
@@ -76,6 +79,7 @@ export default function Activity() {
             <select className="field" value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })}>
               <option value="">All types</option><option value="in">Stock in</option><option value="out">Stock out</option>
               <option value="adjust">Count adjust</option><option value="transfer">Transfers</option><option value="opening">Opening stock</option>
+              <option value="sale">Sales</option><option value="purchase">Purchases</option><option value="sale_return">Sales returns</option><option value="purchase_return">Purchase returns</option><option value="challan">Challans</option>
             </select>
           </Field>
           {multi && (

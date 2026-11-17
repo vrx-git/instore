@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { newId, SYNCED_TABLES, type Category, type Item, type LocalValue, type Move, type New, type Setting, type Store, type Synced, type SyncedTable, type User } from './models';
+import { newId, SYNCED_TABLES, type Account, type Category, type Doc, type Expense, type Item, type LocalValue, type Move, type New, type Party, type Payment, type Setting, type Store, type Synced, type SyncedTable, type User } from './models';
 
 /** Called whenever a local (not remote) change is written — the sync engine listens to schedule an upload. */
 let changeListener: () => void = () => {};
@@ -15,6 +15,11 @@ export class InstoreDb extends Dexie {
   moves!: Table<Move, string>;
   settings!: Table<Setting, string>;
   local!: Table<LocalValue, string>;
+  parties!: Table<Party, string>;
+  docs!: Table<Doc, string>;
+  payments!: Table<Payment, string>;
+  accounts!: Table<Account, string>;
+  expenses!: Table<Expense, string>;
 
   constructor(name = 'instore2') {
     super(name);
@@ -26,6 +31,15 @@ export class InstoreDb extends Dexie {
       moves: 'id, itemId, storeId, userId, at, ref, dirty, [itemId+storeId]',
       settings: 'id, dirty',
       local: 'key',
+    });
+    // v2: billing (bills keep their lines inside the record; moves can belong to a bill)
+    this.version(2).stores({
+      moves: 'id, itemId, storeId, userId, at, ref, dirty, docId, [itemId+storeId]',
+      parties: 'id, name, dirty',
+      docs: 'id, type, partyId, date, sourceId, dirty',
+      payments: 'id, partyId, date, dirty',
+      accounts: 'id, dirty',
+      expenses: 'id, date, dirty',
     });
 
     // Change tracking: stamp updatedAt + dirty on local writes. Records arriving from

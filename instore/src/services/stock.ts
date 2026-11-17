@@ -124,6 +124,7 @@ export async function deleteMove(id: string) {
   await db.transaction('rw', db.moves, async () => {
     const m = await db.moves.get(id);
     if (!m) return;
+    if (m.docId) throw new StockError('This entry belongs to a bill. Edit or cancel the bill instead.');
     if (m.type === 'transfer_in' || m.type === 'transfer_out') await db.moves.where('ref').equals(m.ref).modify({ deleted: 1 });
     else await db.moves.update(id, { deleted: 1 });
   });

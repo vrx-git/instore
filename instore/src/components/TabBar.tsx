@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutGrid, Package, ScanLine, History, Settings } from 'lucide-react';
+import { LayoutGrid, Package, ScanLine, Receipt, Menu } from 'lucide-react';
 
 const TABS = [
   { to: '/', label: 'Home', icon: LayoutGrid },
   { to: '/items', label: 'Items', icon: Package },
   { to: '/scan', label: 'Scan', icon: ScanLine, primary: true },
-  { to: '/activity', label: 'Activity', icon: History },
-  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/bills', label: 'Bills', icon: Receipt },
+  { to: '/more', label: 'More', icon: Menu },
 ];
 
 export function TabBar() {

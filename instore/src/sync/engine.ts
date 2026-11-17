@@ -9,7 +9,7 @@ import { SYNCED_TABLES, type SyncedTable } from '../data/models';
 
 export interface LogRow { time: number; device: string; table: SyncedTable; id: string; deleted: 0 | 1; json: string }
 
-export interface Views { items: (string | number)[][]; activity: (string | number)[][] }
+export interface Views { items: (string | number)[][]; activity: (string | number)[][]; invoices: (string | number)[][]; parties: (string | number)[][] }
 
 export interface SyncBackend {
   appendLog(rows: LogRow[]): Promise<void>;
@@ -99,5 +99,26 @@ export async function buildViews(target: InstoreDb): Promise<Views> {
     activity.push([new Date(m.at).toLocaleString('en-IN'), userName.get(m.userId) ?? '', itemName.get(m.itemId) ?? '(deleted item)', m.type.replace('_', ' '),
       m.qty, bal.get(m.id) ?? 0, storeName.get(m.storeId) ?? '', m.note]);
   }
-  return { items: itemRows, activity };
+  // Bills and parties (readable report tabs).
+  const [docs, parties, payments] = await Promise.all([target.docs.filter((d) => !d.deleted).toArray(), target.parties.filter((p) => !p.deleted).toArray(), target.payments.filter((p) => !p.deleted).toArray()]);
+  const paid = new Map<string, number>();
+  for (const p of payments) for (const a of p.allocations) paid.set(a.docId, (paid.get(a.docId) ?? 0) + a.amount);
+  const LABEL: Record<string, string> = { sales_invoice: 'Sales invoice', purchase_invoice: 'Purchase bill', quotation: 'Quotation', sales_order: 'Sales order', delivery_challan: 'Delivery challan', sales_return: 'Sales return', purchase_order: 'Purchase order', purchase_return: 'Purchase return' };
+  const invoices: (string | number)[][] = [['Date', 'Type', 'Number', 'Party', 'Taxable', 'GST', 'Total', 'Paid', 'Due', 'Status']];
+  for (const d of docs.sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt)) {
+    const isInv = d.type === 'sales_invoice' || d.type === 'purchase_invoice';
+    const pd = !d.partyId && d.type === 'sales_invoice' ? d.total : paid.get(d.id) ?? 0;
+    invoices.push([d.date, LABEL[d.type] ?? d.type, d.number, d.partyName, d.subtotal, Math.round((d.cgst + d.sgst + d.igst) * 100) / 100, d.total,
+      isInv ? Math.round(pd * 100) / 100 : '', isInv ? Math.round((d.total - pd) * 100) / 100 : '', d.status]);
+  }
+  const partyBal = new Map<string, number>();
+  const eff: Record<string, number> = { sales_invoice: 1, sales_return: -1, purchase_invoice: -1, purchase_return: 1 };
+  for (const d of docs) if (d.partyId && d.status !== 'cancelled' && eff[d.type]) partyBal.set(d.partyId, (partyBal.get(d.partyId) ?? 0) + eff[d.type] * d.total);
+  for (const p of payments) partyBal.set(p.partyId, (partyBal.get(p.partyId) ?? 0) + (p.direction === 'in' ? -p.amount : p.amount));
+  const partyRows: (string | number)[][] = [['Name', 'Type', 'Phone', 'GSTIN', 'State', 'Balance', 'To receive / pay']];
+  for (const p of parties.sort((a, b) => a.name.localeCompare(b.name))) {
+    const b = Math.round((p.openingBalance + (partyBal.get(p.id) ?? 0)) * 100) / 100;
+    partyRows.push([p.name, p.type, p.phone, p.gstin, p.state, b, b > 0 ? 'To receive' : b < 0 ? 'To pay' : 'Settled']);
+  }
+  return { items: itemRows, activity, invoices, parties: partyRows };
 }

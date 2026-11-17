@@ -36,6 +36,8 @@ export async function createSheet(token: string): Promise<string> {
       sheets: [
         { properties: { title: 'Items', gridProperties: { frozenRowCount: 1 } } },
         { properties: { title: 'Activity', gridProperties: { frozenRowCount: 1 } } },
+        { properties: { title: 'Invoices', gridProperties: { frozenRowCount: 1 } } },
+        { properties: { title: 'Parties', gridProperties: { frozenRowCount: 1 } } },
         { properties: { title: 'log', gridProperties: { frozenRowCount: 1 } } },
       ],
     }),
@@ -49,8 +51,22 @@ export async function createSheet(token: string): Promise<string> {
 
 export const sheetUrl = (id: string) => `https://docs.google.com/spreadsheets/d/${id}/edit`;
 
+const VIEW_TABS = ['Items', 'Activity', 'Invoices', 'Parties'];
+
 export class SheetsBackend implements SyncBackend {
   constructor(private token: string, private sheetId: string) {}
+
+  /** Older sheets were created before the Invoices/Parties tabs existed: add any that are missing. */
+  private async ensureTabs() {
+    const meta = await call(this.token, `${SHEETS}/${this.sheetId}?fields=sheets.properties.title`);
+    const have = new Set<string>((meta.sheets ?? []).map((s: any) => s.properties.title));
+    const missing = VIEW_TABS.filter((t) => !have.has(t));
+    if (missing.length) {
+      await call(this.token, `${SHEETS}/${this.sheetId}:batchUpdate`, {
+        method: 'POST', body: JSON.stringify({ requests: missing.map((title) => ({ addSheet: { properties: { title, gridProperties: { frozenRowCount: 1 } } } })) }),
+      });
+    }
+  }
 
   async appendLog(rows: LogRow[]) {
     if (!rows.length) return;
@@ -70,10 +86,11 @@ export class SheetsBackend implements SyncBackend {
   }
 
   async writeViews(v: Views) {
-    await call(this.token, `${SHEETS}/${this.sheetId}/values:batchClear`, { method: 'POST', body: JSON.stringify({ ranges: ['Items', 'Activity'] }) });
+    await this.ensureTabs();
+    await call(this.token, `${SHEETS}/${this.sheetId}/values:batchClear`, { method: 'POST', body: JSON.stringify({ ranges: VIEW_TABS }) });
     await call(this.token, `${SHEETS}/${this.sheetId}/values:batchUpdate`, {
       method: 'POST',
-      body: JSON.stringify({ valueInputOption: 'RAW', data: [{ range: 'Items!A1', values: v.items }, { range: 'Activity!A1', values: v.activity }] }),
+      body: JSON.stringify({ valueInputOption: 'RAW', data: [{ range: 'Items!A1', values: v.items }, { range: 'Activity!A1', values: v.activity }, { range: 'Invoices!A1', values: v.invoices }, { range: 'Parties!A1', values: v.parties }] }),
     });
   }
 }

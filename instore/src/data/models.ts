@@ -51,7 +51,8 @@ export interface Item extends Synced {
   createdAt: number;
 }
 
-export type MoveType = 'opening' | 'in' | 'out' | 'transfer_in' | 'transfer_out' | 'adjust';
+export type MoveType = 'opening' | 'in' | 'out' | 'transfer_in' | 'transfer_out' | 'adjust'
+  | 'sale' | 'purchase' | 'sale_return' | 'purchase_return' | 'challan';
 
 export interface Move extends Synced {
   itemId: string;
@@ -63,6 +64,111 @@ export interface Move extends Synced {
   note: string;
   /** links the two halves of a transfer */
   ref: string;
+  /** set when the move was created by a bill (invoice, purchase, return, challan) */
+  docId?: string | null;
+}
+
+// ---------------------------------------------------------------- billing
+export type PartyType = 'customer' | 'supplier' | 'both';
+
+export interface Party extends Synced {
+  name: string;
+  type: PartyType;
+  phone: string;
+  email: string;
+  gstin: string;
+  state: string;
+  address: string;
+  /** +ve = they owe us (to receive), -ve = we owe them (to pay) */
+  openingBalance: number;
+  active: 0 | 1;
+  createdAt: number;
+}
+
+export type DocType =
+  | 'sales_invoice' | 'quotation' | 'sales_order' | 'delivery_challan' | 'sales_return'
+  | 'purchase_invoice' | 'purchase_order' | 'purchase_return';
+export type DocStatus = 'open' | 'completed' | 'cancelled';
+
+export interface DocLine {
+  itemId: string | null;
+  description: string;
+  hsn: string;
+  unit: string;
+  qty: number;
+  rate: number;
+  discountPct: number;
+  gstRate: number;
+  taxable: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
+  amount: number;
+  /** item purchase price when the bill was made (for profit) */
+  costRate: number;
+}
+
+export interface Doc extends Synced {
+  type: DocType;
+  number: string;
+  date: string; // YYYY-MM-DD
+  dueDate: string;
+  partyId: string | null;
+  partyName: string;
+  storeId: string;
+  isGst: 0 | 1;
+  taxInclusive: 0 | 1;
+  placeOfSupply: string;
+  status: DocStatus;
+  sourceId: string | null;
+  lines: DocLine[];
+  subtotal: number;
+  discount: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
+  otherCharges: number;
+  roundOff: number;
+  total: number;
+  costTotal: number;
+  notes: string;
+  terms: string;
+  transport: string;
+  vehicleNo: string;
+  createdBy: string;
+  createdAt: number;
+}
+
+export interface Allocation { docId: string; amount: number }
+
+export interface Payment extends Synced {
+  direction: 'in' | 'out';
+  number: string;
+  date: string;
+  partyId: string;
+  accountId: string;
+  amount: number;
+  reference: string;
+  note: string;
+  allocations: Allocation[];
+  createdBy: string;
+  createdAt: number;
+}
+
+export interface Account extends Synced {
+  name: string;
+  kind: 'cash' | 'bank';
+  openingBalance: number;
+}
+
+export interface Expense extends Synced {
+  date: string;
+  category: string;
+  accountId: string;
+  amount: number;
+  note: string;
+  createdBy: string;
+  createdAt: number;
 }
 
 /** Shared settings (synced), e.g. business_name. */
@@ -76,7 +182,7 @@ export interface LocalValue {
   value: string;
 }
 
-export const SYNCED_TABLES = ['users', 'stores', 'categories', 'items', 'moves', 'settings'] as const;
+export const SYNCED_TABLES = ['users', 'stores', 'categories', 'items', 'moves', 'settings', 'parties', 'docs', 'payments', 'accounts', 'expenses'] as const;
 export type SyncedTable = (typeof SYNCED_TABLES)[number];
 
 /** Fields the app fills in; callers create records without them. */
@@ -89,6 +195,11 @@ export const MOVE_LABEL: Record<MoveType, string> = {
   transfer_in: 'Transfer in',
   transfer_out: 'Transfer out',
   adjust: 'Count adjust',
+  sale: 'Sale',
+  purchase: 'Purchase',
+  sale_return: 'Sales return',
+  purchase_return: 'Purchase return',
+  challan: 'Delivery challan',
 };
 
 export type StockStatus = 'ok' | 'low' | 'out';

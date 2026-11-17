@@ -10,9 +10,18 @@ INSTORE is the phone version of Stock Register. It's an installable web app (PWA
 - **Activity**: audit trail of every change, grouped by day: who, what, which store, ±qty and the resulting stock. Filter by user, type, store and dates.
 - **Settings**: stores/godowns, categories, users and PINs, backup/restore (JSON), demo items, install help.
 
+**Billing** (same features as the PC Stock Register app):
+- **Bills tab:** sales invoices (GST / non-GST, CGST+SGST or IGST by place of supply, tax-inclusive rates, discounts, round-off), purchase bills, quotations, sales/purchase orders, delivery challans, sales and purchase returns.
+- **Converting bills:** quote → order / challan / invoice, PO → purchase bill, invoice → return. Invoices, purchases, returns and challans update stock automatically.
+- **Sharing:** print or save a PDF in A4, A5 or 2″/3″ thermal size, with your logo, GSTIN, tax table, amount in words and bank details. You can also send a WhatsApp summary.
+- **More → Customers & suppliers:** "to receive / to pay" balances, party ledger, call and WhatsApp reminders.
+- **More → Payments:** money received or paid against bills, plus Cash and Bank/UPI balances.
+- **More → Expenses** and **More → Reports & GST** (owner only): profit & loss; sales and purchases by day, month, party or item; GSTR-1 and GSTR-2 summaries; share as CSV.
+- **Settings:** business details used on invoices are under More → Business details.
+
 Users log in with a **4-digit PIN**. The app locks after 5 minutes in the background.
 - **Owner**: everything.
-- **Staff**: view items and record stock only. Staff can't add, edit or archive items, delete history, or manage users and backups.
+- **Staff**: record stock, create bills and payments. Staff can't add, edit or archive items, cancel or delete bills, see profit, reports or expenses, or manage users and backups.
 
 ## Develop
 
@@ -52,13 +61,15 @@ Without GitHub, you can build it yourself (`npm run build:instore`) and drag the
 
 **On another phone or computer:** open INSTORE and choose **Already use INSTORE? Restore from my backup email**. Enter the same email and everything downloads, including your users and PINs. After that, both devices stay in sync.
 
-The sheet has three tabs:
+The sheet has these tabs:
 
 | Tab | What it is |
 | --- | --- |
 | `log` | The sync data. Don't edit it. |
 | `Items` | Readable report: every item with its current stock. Rewritten after each sync. |
 | `Activity` | Readable report: recent stock movements. Rewritten after each sync. |
+| `Invoices` | Readable report: every bill with paid and due amounts. Rewritten after each sync. |
+| `Parties` | Readable report: customers and suppliers with balances. Rewritten after each sync. |
 
 Google sign-in in a browser app lasts about an hour. INSTORE renews it **automatically at login**: whenever the PIN screen shows (opening the app, or returning after auto-lock), it quietly reconnects to Google with no screens to tap, then syncs.
 - **If the hour runs out while you're using the app:** your changes keep saving on the phone and upload at the next login. You can also tap the yellow bar to reconnect straight away.

@@ -96,7 +96,7 @@ export default function ItemDetail() {
                 <div className={`font-semibold tabular-nums ${m.qty > 0 ? 'text-primary' : 'text-out'}`}>{signed(m.qty)}</div>
                 <div className="text-xs text-muted tabular-nums">= {qty(m.balanceAfter)}</div>
               </div>
-              {isOwner && (
+              {isOwner && !m.docId && (
                 <button className="flex h-9 w-8 items-center justify-center text-muted" aria-label="Delete entry"
                   onClick={() => window.confirm('Delete this entry? Stock will be recalculated.') && deleteMove(m.id!).then(() => toast('Entry deleted'))}>
                   <Trash2 size={15} />
